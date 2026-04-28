@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Habit Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #c3c3c3;
+            color: #e0e0e0;
+        }
+        .card{
+            background-color: #ffffff;
+            border:1px solid #323232;
+            transition: transform 0.3s,box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(43, 44, 102, 0.45);
+        }
+        .btn {
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0px 6px rgba(0,0,0,0.2);
+        }
+        #sidebar {
+            background-color: #12091a !important;
+        }
+        .navbar {
+            background-color: #12091a !important;
+        }
+        .form-control {
+        background-color: #ffffff;
+        border: 1px solid #222222;
+        color: #1f0923;
+        }
+
+        .form-control:focus {
+            background-color: #a7a7a7;
+            color: #2a0f2e;
+            border-color: #424242;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+        }
+        
+
+        .form-select {
+            background-color: #fac8ff;
+            border: 1px solid #292929;
+            color: #2f2f2f;
+        }
+        h1, h2, h5 {
+            color: #0e0d2d;
+        }
+    
+    </style>
+
+
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4">
+        <button onclick="toggleSidebar()" clas="btn btn-outline-light btn-sm">☰</button>
+        <span class="navbar-brand">🔥 Habit Tracker</span>
+        <span class="text-white">{% block title %}{% endblock %}</span>
+    </nav>
+
+    <div class="d-flex">
+        <div id="sidebar" class="bg-dark text-white p-3" style="width:250px; min-height:100vh; display:none;">
+            <ul class="nav flex-column">
+                <li class="nav-item"><a href="/" class="nav-link text-white">🏠 Home</a></li>
+                <li class="nav-item"><a href="#" class="nav-link text-white">📊 Stats</a></li>
+                <li class="nav-item"><a href="#" class="nav-link text-white">📋 Habits</a></li>
+                <li class="nav-item"><a href="#" class="nav-link text-white">👤 Profile</a></li>
+            </ul>
+        </div>
+
+        <div class="container mt-4">
+            {% block content %}
+            {% endblock %}
+        </div>
+
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar=document.getElementById('sidebar');
+            if(sidebar.style.display==='none'){
+                sidebar.style.display='block';
+            } else {
+                sidebar.style.display='none';
+            }
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

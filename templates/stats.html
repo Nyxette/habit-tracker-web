@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Stats for: {{ habit_name }}{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-column align-items-center">
+
+        <select class="form-select w-25 mb-4" onchange="window.location.href='/stats/' +this.value">
+            {% for habit in all_habits %}
+                <option value="{{ habit[0]}}" {% if habit[0] == habit_id %}selected{% endif %}>
+                    {{ habit[1] }}
+                </option>
+            {% endfor %}
+        </select>
+
+
+        <table class="table table-bordered table-hover" style="width: 400px;">
+            <thead class="table-dark">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>All time</td><td>{{ all_time_count }}</td></tr>
+                <tr><td>Last 30 days</td><td>{{ monthly_count }}</td></tr>
+                <tr><td>Last 7 days</td><td>{{ weekly_count }}</td></tr>
+                <tr><td>Last 24 hours</td><td>{{ daily_count }}</td></tr>
+                <tr class="table-warning"><td>🔥 Current Streak</td><td>{{ cur_streak }} days</td></tr>
+                <tr class="table-success"><td>🏆 Longest Streak</td><td>{{ longest_streak }} days</td></tr>
+            </tbody>
+        </table>
+
+
+        <div class="mt-5" style="width: 600px;">
+            <canvas id="habitChart"></canvas>
+            {% block scripts %}
+            <script>
+                const labels = {{ labels | tojson }};
+                const values = {{ values | tojson }};
+
+                new Chart(document.getElementById("habitChart"), {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Times logged",
+                            data: values,
+                            backgroundColor: "rgba(54, 162, 235, 0.6)"
+                        }]
+                    }
+                });
+            </script>
+            {% endblock %}
+        </div>
+    </div>
+{% endblock %}
