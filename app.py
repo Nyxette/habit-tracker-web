@@ -103,10 +103,18 @@ def stats(habit_id):
 
     all_habits=cursor.execute("SELECT * FROM habits").fetchall()
 
+    counts=[]
+    for i in all_habits:
+        counts.append(cursor.execute("SELECT COUNT(*) FROM habit_logs where habit_id=?",(i[0],)).fetchone()[0])
+
+    radar_labels = [i[1] for i in all_habits]
+
     
     conn.close()
 
     return render_template("stats.html",
+    radar_labels=radar_labels,
+    counts=counts,
     all_habits=all_habits,
     labels=labels,
     values=values,

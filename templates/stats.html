@@ -32,9 +32,16 @@
         </table>
 
 
-        <div class="mt-5" style="width: 600px;">
-            <canvas id="habitChart"></canvas>
-            {% block scripts %}
+        <div class="d-flex gap-4 mt-5">
+            <div style="width:500px;">
+                <canvas id="habitChart"></canvas>
+            </div>
+            <div style="width:400px;">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+
+        {% block scripts %}
             <script>
                 const labels = {{ labels | tojson }};
                 const values = {{ values | tojson }};
@@ -50,8 +57,23 @@
                         }]
                     }
                 });
+                
+                new Chart(document.getElementById("radarChart"), {
+                    type: "radar",
+                    data: {
+                        labels: {{ radar_labels | tojson }},
+                        datasets: [{
+                            label: "Last 30 days",
+                            data: {{ counts | tojson }},
+                            backgroundColor: "rgba(99, 102, 241, 0.2)",
+                            borderColor: "rgba(99, 102, 241, 1)",
+                            pointBackgroundColor: "rgba(99, 102, 241, 1)"
+                        }]
+                    }
+                });
             </script>
+
+
             {% endblock %}
-        </div>
     </div>
 {% endblock %}
