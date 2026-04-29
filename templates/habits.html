@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{%block title %} Home {% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-column align-items-center">
+        <h1>All Habits</h1>
+        
+        {% for habit in habits %}
+            <div class="card mb-3" style="width: 600px;">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <span id="name-{{habit[0]}}">{{habit[1]}}</span>
+                    <form id="form-{{habit[0]}}" action="/edit/{{habit[0]}}" method="POST" style="display:none">
+                        <input type="text" name="new_name" id="input-{{habit[0]}}" class="form-control form-control-sm d-inline" style="width:150px;">
+                        <button type="submit" class="btn btn-success btn-sm">Save</button>
+                    </form>
+                    <div>
+                        <button class="btn btn-warning btn-sm" onclick="toggleEdit({{habit[0]}}, '{{habit[1]}}')">Edit</button>
+                        <form action="/delete/{{habit[0]}}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {%endfor%}
+
+    </div>    
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+    
+        function toggleEdit(id, currentName) {
+            document.getElementById("name-" + id).style.display = "none";
+            const form = document.getElementById("form-" + id);
+            form.style.display = "inline";
+            document.getElementById("input-" + id).value = currentName;
+        }
+    </script>
+    {%endblock%}

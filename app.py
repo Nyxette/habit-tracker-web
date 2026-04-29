@@ -42,6 +42,28 @@ def log_habit(habit_id):
     conn.close()
     return redirect("/")
 
+@app.route("/edit/<int:habit_id>",methods=['POST'])
+def edit_habit(habit_id):
+    new_name=request.form['new_name']
+    conn=get_connection()
+    cursor=conn.cursor()
+    cursor.execute("UPDATE habits SET name=? WHERE id=?",(new_name,habit_id))
+    conn.commit()
+    conn.close()
+    return redirect("/habits")
+    
+
+@app.route("/habits")
+def habits():
+    conn=get_connection()
+    cursor=conn.cursor()
+    habits=cursor.execute("SELECT * FROM habits").fetchall()
+    conn.close()
+    return render_template("habits.html",
+                           habits=habits,
+                           )
+
+
 @app.route("/stats/<int:habit_id>")
 def stats(habit_id):
     conn=get_connection()
