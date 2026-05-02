@@ -33,6 +33,28 @@ def delete_habit(habit_id):
     conn.close()
     return redirect("/")
 
+
+@app.route("/profile")
+def profile():
+    conn=get_connection()
+    cursor=conn.cursor()
+
+    habit_count = cursor.execute("SELECT COUNT(*) FROM habits").fetchone()[0]
+    total_logs_ever = cursor.execute("SELECT COUNT(*) FROM habit_logs").fetchone()[0]
+    earliest_date = cursor.execute("SELECT MIN(created_at) FROM habits").fetchone()[0]
+    earliest_date=earliest_date[:10]
+    consistent_habit = cursor.execute("SELECT name FROM habits JOIN habit_logs ON habits.id = habit_logs.habit_id GROUP BY habit_id ORDER BY COUNT(*) DESC LIMIT 1").fetchone()
+    conn.close()
+
+    return render_template("profile.html",
+                           habit_count=habit_count,
+                           total_logs_ever=total_logs_ever,
+                           earliest_date=earliest_date,
+                           consistent_habit=consistent_habit
+                           )
+
+
+
 @app.route("/log/<int:habit_id>", methods=['POST'])
 def log_habit(habit_id):
     conn=get_connection()
