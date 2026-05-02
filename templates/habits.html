@@ -1,40 +1,255 @@
 {% extends "base.html" %}
-{%block title %} Home {% endblock %}
+{% block title %}Habits{% endblock %}
 
 {% block content %}
-    <div class="d-flex flex-column align-items-center">
-        <h1>All Habits</h1>
-        
-        {% for habit in habits %}
-            <div class="card mb-3" style="width: 600px;">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <span id="name-{{habit[0]}}">{{habit[1]}}</span>
-                    <form id="form-{{habit[0]}}" action="/edit/{{habit[0]}}" method="POST" style="display:none">
-                        <input type="text" name="new_name" id="input-{{habit[0]}}" class="form-control form-control-sm d-inline" style="width:150px;">
-                        <button type="submit" class="btn btn-success btn-sm">Save</button>
-                    </form>
-                    <div>
-                        <button class="btn btn-warning btn-sm" onclick="toggleEdit({{habit[0]}}, '{{habit[1]}}')">Edit</button>
-                        <form action="/delete/{{habit[0]}}" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
+
+{% set all_icons = ['⭐','💧','🧠','🏋️','☀️','📖','🎯','🏃','🎵','✍️','🧘','💊','🥗','💤','🚶','💻','🌿','❤️','🎨','🏊','🍎','🧹','📝','🌙','☕','🎧','🤸','🚴','🌊','🏆'] %}
+
+<div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:0.25rem;">
+    <div>
+        <div class="ht-heading">Manage Habits</div>
+        <div class="ht-subheading">Create, edit, and organise your habits</div>
+    </div>
+</div>
+
+<!-- Add Habit Form -->
+<div class="ht-card p-4 mb-4" style="border-left:3px solid var(--primary);">
+    <div style="font-family:'Sora',sans-serif; font-weight:700; font-size:1rem; color:var(--text-primary); margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+        <span>Add New Habit</span>
+        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:400; font-family:'DM Sans',sans-serif;">Fill in the details below</span>
+    </div>
+
+    <form action="/add" method="POST" id="add-form">
+        <!-- Icon picker -->
+        <div style="margin-bottom:1rem;">
+            <label style="font-size:0.78rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Choose Icon</label>
+            <button type="button" id="add-icon-trigger" onclick="toggleIconPicker('add')" style="
+                display:inline-flex; align-items:center; gap:0.5rem;
+                background:rgba(255,255,255,0.05); border:1.5px solid var(--border-subtle);
+                border-radius:var(--radius-sm); padding:0.4rem 0.9rem;
+                color:var(--text-primary); cursor:pointer; font-size:0.88rem;
+                transition:all 0.2s;
+            ">
+                <span id="add-icon-display" style="font-size:1.2rem;">⭐</span>
+                <span style="font-size:0.78rem; color:var(--text-secondary); font-family:'Sora',sans-serif;">Change icon ▾</span>
+            </button>
+            <div id="add-icon-picker" style="display:none; margin-top:0.5rem;" class="animate-in">
+            <div class="icon-grid" id="add-icon-grid">
+                {% for ico in all_icons %}
+                <div class="icon-btn {% if loop.first %}selected{% endif %}"
+                     onclick="selectIcon('add', '{{ ico }}', this)"
+                     title="{{ ico }}">{{ ico }}</div>
+                {% endfor %}    
+            </div>
+            </div>
+            <input type="hidden" name="habit_icon" id="add-habit-icon" value="{{ all_icons[0] }}">
+        </div>
+
+
+        <!-- Name + Type row -->
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
+            <div style="flex:1; min-width:200px;">
+                <label style="font-size:0.78rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Habit Name</label>
+                <input type="text" name="habit_name" placeholder="e.g. Drink water, No social media…" class="form-control" required style="height:42px;">
+            </div>
+            <div style="min-width:180px;">
+                <label style="font-size:0.78rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Type</label>
+                <div class="type-toggle" id="add-type-toggle">
+                    <button type="button" class="type-btn good active" onclick="setType('add', 'good', this)">🌿 Good</button>
+                    <button type="button" class="type-btn bad" onclick="setType('add', 'bad', this)">⚡ Bad</button>
+                </div>
+                <input type="hidden" name="habit_type" id="add-habit-type" value="good">
+            </div>
+            <button type="submit" class="btn btn-primary" style="height:42px; padding:0 1.5rem; display:inline-flex; align-items:center; gap:0.5rem; white-space:nowrap;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Habit
+            </button>
+        </div>
+    </form>
+</div>
+
+
+<!-- Habits List -->
+{% if not habits %}
+<div class="ht-card p-5 text-center">
+    <div style="font-size:2.5rem; margin-bottom:0.75rem;">🌱</div>
+    <div style="font-family:'Sora',sans-serif; font-weight:700; color:var(--text-primary);">No habits yet</div>
+    <div style="font-size:0.88rem; color:var(--text-secondary); margin-top:0.35rem;">Use the form above to add your first habit.</div>
+</div>
+{% endif %}
+
+{% set colors = ['#7C5CFF', '#FF6B9D', '#FFB703', '#34D399', '#F87171', '#38BDF8', '#A78BFA', '#FB923C'] %}
+
+<div style="display:flex; flex-direction:column; gap:0.6rem;">
+{% for habit in habits %}
+{% set color = colors[loop.index0 % colors|length] %}
+{% set htype = habit[3] if habit|length > 3 else 'good' %}
+{% set hicon = habit[4] if habit|length > 4 else '⭐' %}
+
+<!-- Habit Card -->
+<div class="ht-card" style="border-left:3px solid {{ color }}; overflow:hidden;" id="card-{{ habit[0] }}">
+    <div style="display:flex; align-items:center; gap:1rem; padding:0.9rem 1.25rem;">
+
+        <!-- Icon -->
+        <div style="
+            width:42px; height:42px;
+            border-radius:10px;
+            background:{{ color }}18;
+            border:1px solid {{ color }}33;
+            display:flex; align-items:center; justify-content:center;
+            font-size:1.2rem;
+            flex-shrink:0;
+        ">{{ hicon }}</div>
+
+        <!-- Name + type -->
+        <div style="flex:1; min-width:0;">
+            <div style="font-family:'Sora',sans-serif; font-weight:600; font-size:0.95rem; color:var(--text-primary);">{{ habit[1] }}</div>
+            <div style="margin-top:0.2rem;">
+                {% if htype == 'good' %}
+                <span class="stat-pill good" style="font-size:0.66rem;">🌿 Good habit</span>
+                {% else %}
+                <span class="stat-pill bad" style="font-size:0.66rem;">⚡ Break this</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex; gap:0.5rem; flex-shrink:0;">
+            <a href="/stats/{{ habit[0] }}" class="btn btn-ghost" style="font-size:0.78rem; display:inline-flex; align-items:center; gap:0.3rem; text-decoration:none;">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/>
+                </svg>
+                Stats
+            </a>
+            <button class="btn btn-edit" onclick="toggleEditPanel({{ habit[0] }})">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+            </button>
+            <form action="/delete/{{ habit[0] }}" method="POST" class="d-inline"
+                  onsubmit="return confirm('Delete \'{{ habit[1] }}\'? This will also remove all logs.')">
+                <button type="submit" class="btn btn-danger-soft">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+                    </svg>
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Panel (hidden by default) -->
+    <div id="edit-panel-{{ habit[0] }}" style="display:none; border-top:1px solid var(--border-subtle); padding:1.25rem; background:var(--card2);">
+        <form action="/edit/{{ habit[0] }}" method="POST">
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.75rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Icon</label>
+                
+                <button type="button" onclick="toggleIconPicker('edit-{{ habit[0] }}')" style="display:inline-flex; align-items:center; gap:0.5rem;
+                        background:rgba(255,255,255,0.05); border:1.5px solid var(--border-subtle);
+                        border-radius:var(--radius-sm); padding:0.4rem 0.9rem;
+                        color:var(--text-primary); cursor:pointer; font-size:0.88rem;
+                        transition:all 0.2s; margin-bottom:0.5rem;">
+                    <span id="edit-icon-display-{{ habit[0] }}" style="font-size:1.2rem;">{{ hicon }}</span>
+                    <span style="font-size:0.78rem; color:var(--text-secondary); font-family:'Sora',sans-serif;">Change icon ▾</span>
+                </button>
+
+                <div id="edit-{{ habit[0] }}-icon-picker" style="display:none; margin-top:0.5rem;" class="animate-in">
+                    <div class="icon-grid" id="edit-icon-grid-{{ habit[0] }}">
+                        {% for ico in all_icons %}
+                        <div class="icon-btn {% if ico == hicon %}selected{% endif %}"
+                            onclick="selectIcon('edit-{{ habit[0] }}', '{{ ico }}', this)"
+                            title="{{ ico }}">{{ ico }}</div>
+                        {% endfor %}
                     </div>
                 </div>
-            </div>
-        {%endfor%}
 
-    </div>    
+                <input type="hidden" name="habit_icon" id="edit-habit-icon-{{ habit[0] }}" value="{{ hicon }}">
+            </div>
+
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
+                <div style="flex:1; min-width:180px;">
+                    <label style="font-size:0.75rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Name</label>
+                    <input type="text" name="new_name" value="{{ habit[1] }}" class="form-control" required style="height:40px;">
+                </div>
+                <div style="min-width:180px;">
+                    <label style="font-size:0.75rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Type</label>
+                    <div class="type-toggle" id="edit-type-toggle-{{ habit[0] }}">
+                        <button type="button" class="type-btn good {% if htype == 'good' %}active{% endif %}"
+                                onclick="setType('edit-{{ habit[0] }}', 'good', this)">🌿 Good</button>
+                        <button type="button" class="type-btn bad {% if htype == 'bad' %}active{% endif %}"
+                                onclick="setType('edit-{{ habit[0] }}', 'bad', this)">⚡ Bad</button>
+                    </div>
+                    <input type="hidden" name="habit_type" id="edit-habit-type-{{ habit[0] }}" value="{{ htype }}">
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="height:40px; padding:0 1.25rem;">Save</button>
+                    <button type="button" class="btn btn-ghost" onclick="toggleEditPanel({{ habit[0] }})" style="height:40px;">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+</div>
 
 {% endblock %}
 
 {% block scripts %}
-    <script>
-    
-        function toggleEdit(id, currentName) {
-            document.getElementById("name-" + id).style.display = "none";
-            const form = document.getElementById("form-" + id);
-            form.style.display = "inline";
-            document.getElementById("input-" + id).value = currentName;
-        }
-    </script>
-    {%endblock%}
+<script>
+function selectIcon(prefix, emoji, el) {
+    // Deselect all in the same grid
+    const gridId = prefix === 'add' ? 'add-icon-grid' : 'edit-icon-grid-' + prefix.replace('edit-', '');
+    const grid = document.getElementById(gridId);
+    if (grid) grid.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+
+    // Update trigger button icon display
+    const displayId = prefix === 'add' ? 'add-icon-display' : `edit-icon-display-${prefix.replace('edit-','')}`;
+    const displayEl = document.getElementById(displayId);
+    if (displayEl) displayEl.textContent = emoji;
+    // Close the picker
+    toggleIconPicker(prefix);
+
+    const inputId = prefix === 'add' ? 'add-habit-icon' : 'edit-habit-icon-' + prefix.replace('edit-', '');
+    const input = document.getElementById(inputId);
+    if (input) input.value = emoji;
+}
+
+function toggleIconPicker(prefix) {
+    const pickerId = prefix === 'add' ? 'add-icon-picker' : `edit-${prefix.replace('edit-','')}-icon-picker`;
+    const el = document.getElementById(pickerId);
+    if (!el) return;
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function setType(prefix, type, btn) {
+    const toggleId = prefix === 'add' ? 'add-type-toggle' : 'edit-type-toggle-' + prefix.replace('edit-', '');
+    const toggle = document.getElementById(toggleId);
+    if (toggle) {
+        toggle.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    }
+    btn.classList.add('active');
+
+    const inputId = prefix === 'add' ? 'add-habit-type' : 'edit-habit-type-' + prefix.replace('edit-', '');
+    const input = document.getElementById(inputId);
+    if (input) input.value = type;
+}
+
+function toggleEditPanel(id) {
+    const panel = document.getElementById('edit-panel-' + id);
+    if (!panel) return;
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+        panel.classList.add('animate-in');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        panel.classList.remove('animate-in');
+    }
+}
+</script>
+{% endblock %}
