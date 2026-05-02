@@ -3,6 +3,7 @@ from db import init_db, get_connection
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+init_db()
 
 
 @app.route("/")
