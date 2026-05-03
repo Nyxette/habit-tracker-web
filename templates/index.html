@@ -46,8 +46,8 @@
         <div style="
             width: 46px; height: 46px;
             border-radius: 12px;
-            background: {{ color }}18;
-            border: 1px solid {{ color }}33;
+            background: {{ color }}30;
+            border: 1px solid {{ color }}60;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.3rem;
             flex-shrink: 0;
@@ -98,6 +98,7 @@
 
         <!-- Log button -->
        
+        
         <form action="/log/{{ habit[0] }}" method="POST" class="d-inline" 
             style="display:flex; align-items:center; gap:0.5rem;">
             {% if ltype == 'boolean' %}

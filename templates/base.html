@@ -27,7 +27,7 @@
         --text-muted:    #5E5A7A;
         --border:        rgba(124, 92, 255, 0.18);
         --border-subtle: rgba(255,255,255,0.06);
-        --sidebar-bg:    #0B0A18;
+        --sidebar-bg:    rgba(11, 10, 24, 0.7);
         --sidebar-width: 230px;
         --navbar-h:      62px;
         --radius:        14px;
@@ -60,7 +60,7 @@
         position: fixed;
         top: 0; left: 0; right: 0;
         height: var(--navbar-h);
-        background: rgba(11, 10, 24, 0.92);
+        background: rgba(11, 10, 24, 0.01);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         display: flex;
@@ -262,7 +262,9 @@
 
     /* ── Cards ── */
     .ht-card {
-        background: var(--card);
+        background: rgba(28,27,51,0.75);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         border: 1px solid var(--border-subtle);
         border-radius: var(--radius);
         transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
@@ -534,6 +536,15 @@
     </style>
 </head>
 <body>
+
+    <div style="position:fixed; top:200px; left:-100px; width:600px; height:600px;
+        background:radial-gradient(circle, rgba(108,60,255,0.50) 0%, transparent 65%);
+        pointer-events:none; z-index:0;"></div>
+
+    <div style="position:fixed; top:-80px; right:-80px; width:500px; height:500px;
+        background:radial-gradient(circle, rgba(220,50,80,0.40) 0%, transparent 65%);
+        pointer-events:none; z-index:0;"></div>
+
 
     <!-- Navbar -->
     <nav class="ht-navbar">
