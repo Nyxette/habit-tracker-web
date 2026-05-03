@@ -11,15 +11,16 @@ def home():
     conn = get_connection()
     today = datetime.now().date().isoformat()
     habits = conn.execute("SELECT * FROM habits").fetchall()
-    today_counts = {}
+    today_values = {}
     for h in habits:
-        count = conn.execute(
-            "SELECT COUNT(*) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)=?",
+        result = conn.execute(
+            "SELECT COALESCE(SUM(value), 0), COUNT(*) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)=?",
             (h[0], today)
-        ).fetchone()[0]
-        today_counts[h[0]] = count
+        ).fetchone()
+        today_values[h[0]] = {'sum': result[0], 'count': result[1]}
+    # pass today_values=today_values to render_template (remove today_counts)
     conn.close()
-    return render_template("index.html", habits=habits, today_counts=today_counts)
+    return render_template("index.html", habits=habits, today_values=today_values)
 
 
 @app.route("/add", methods=['POST'])
@@ -29,9 +30,11 @@ def add_habit():
     habit_icon = request.form.get('habit_icon', '⭐')
     conn = get_connection()
     cursor = conn.cursor()
+    log_type = request.form.get('log_type', 'boolean')
+    # and add it to the INSERT:
     cursor.execute(
-        "INSERT INTO habits (name, created_at, type, icon) VALUES (?, ?, ?, ?)",
-        (habit_name, datetime.now().isoformat(), habit_type, habit_icon)
+        "INSERT INTO habits (name, created_at, type, icon, log_type) VALUES (?, ?, ?, ?, ?)",
+        (habit_name, datetime.now().isoformat(), habit_type, habit_icon, log_type)
     )
     conn.commit()
     conn.close()
@@ -93,11 +96,12 @@ def update_profile():
 
 @app.route("/log/<int:habit_id>", methods=['POST'])
 def log_habit(habit_id):
+    value = float(request.form.get('value', 1))
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO habit_logs (logged_at, habit_id) VALUES (?, ?)",
-        (datetime.now().isoformat(), habit_id)
+        "INSERT INTO habit_logs (logged_at, habit_id, value) VALUES (?, ?, ?)",
+        (datetime.now().isoformat(), habit_id, value)
     )
     conn.commit()
     conn.close()
@@ -111,10 +115,24 @@ def edit_habit(habit_id):
     habit_icon = request.form.get('habit_icon', '⭐')
     conn = get_connection()
     cursor = conn.cursor()
+    log_type = request.form.get('log_type', 'boolean')
     cursor.execute(
-        "UPDATE habits SET name=?, type=?, icon=? WHERE id=?",
-        (new_name, habit_type, habit_icon, habit_id)
+        "UPDATE habits SET name=?, type=?, icon=?, log_type=? WHERE id=?",
+        (new_name, habit_type, habit_icon, log_type, habit_id)
     )
+
+    old_habit = conn.execute("SELECT log_type FROM habits WHERE id=?", (habit_id,)).fetchone()
+    old_log_type = old_habit[0] if old_habit else 'boolean'
+
+    cursor.execute(
+        "UPDATE habits SET name=?, type=?, icon=?, log_type=? WHERE id=?",
+        (new_name, habit_type, habit_icon, log_type, habit_id)
+    )
+
+    # If switching TO boolean, normalize all existing log values to 1
+    if log_type == 'boolean' and old_log_type != 'boolean':
+        cursor.execute("UPDATE habit_logs SET value=1 WHERE habit_id=?", (habit_id,))
+
     conn.commit()
     conn.close()
     return redirect("/habits")
@@ -144,17 +162,17 @@ def stats(habit_id):
     conn = get_connection()
     cursor = conn.cursor()
 
-    all_time_count = cursor.execute("SELECT COUNT(*) FROM habit_logs WHERE habit_id=?", (habit_id,)).fetchone()
+    all_time_count = cursor.execute("SELECT COALESCE(SUM(value),0) FROM habit_logs WHERE habit_id=?", (habit_id,)).fetchone()
     monthly_count  = cursor.execute(
-        "SELECT COUNT(*) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)>=?",
+        "SELECT COALESCE(SUM(value),0) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)>=?",
         (habit_id, (datetime.now().date() - timedelta(days=30)).isoformat())
     ).fetchone()
     weekly_count = cursor.execute(
-        "SELECT COUNT(*) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)>=?",
+        "SELECT COALESCE(SUM(value),0) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)>=?",
         (habit_id, (datetime.now().date() - timedelta(days=7)).isoformat())
     ).fetchone()
     daily_count = cursor.execute(
-        "SELECT COUNT(*) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)>=?",
+        "SELECT COALESCE(SUM(value),0) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)>=?",
         (habit_id, (datetime.now().date() - timedelta(days=1)).isoformat())
     ).fetchone()
 
@@ -201,7 +219,7 @@ def stats(habit_id):
         d = (datetime.now().date() - timedelta(days=i)).isoformat()
         labels.append(datetime.strptime(d, "%Y-%m-%d").strftime("%b %d"))
         cnt = cursor.execute(
-            "SELECT COUNT(*) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)=?",
+            "SELECT COALESCE(SUM(value),0) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)=?",
             (habit_id, d)
         ).fetchone()[0]
         values.append(cnt)
@@ -211,7 +229,7 @@ def stats(habit_id):
     for i in range(83, -1, -1):
         d = (datetime.now().date() - timedelta(days=i)).isoformat()
         cnt = cursor.execute(
-            "SELECT COUNT(*) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)=?",
+            "SELECT COALESCE(SUM(value),0) FROM habit_logs WHERE habit_id=? AND DATE(logged_at)=?",
             (habit_id, d)
         ).fetchone()[0]
         heatmap.append({"date": d, "count": cnt})
@@ -223,9 +241,12 @@ def stats(habit_id):
     ]
     radar_labels = [h[1] for h in all_habits]
 
+    log_type = habit_row[5] if len(habit_row) > 5 else 'boolean'
+
     conn.close()
 
     return render_template("stats.html",
+                           log_type=log_type,
                            radar_labels=radar_labels,
                            counts=counts,
                            all_habits=all_habits,

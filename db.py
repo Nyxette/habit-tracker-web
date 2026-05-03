@@ -15,7 +15,8 @@ def init_db():
             name TEXT NOT NULL,
             created_at TEXT NOT NULL,
             type TEXT DEFAULT 'good',
-            icon TEXT DEFAULT '⭐')
+            icon TEXT DEFAULT '⭐',
+            log_type TEXT DEFAULT 'boolean')
     """)
 
     cursor.execute("""
@@ -23,7 +24,9 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             logged_at TEXT NOT NULL,
             habit_id INTEGER NOT NULL,
-            FOREIGN KEY (habit_id) REFERENCES habits(id))
+            value REAL DEFAULT 1,
+            FOREIGN KEY (habit_id) REFERENCES habits(id)
+            )
     """)
 
     cursor.execute("""
@@ -44,6 +47,14 @@ def init_db():
         cursor.execute("ALTER TABLE habits ADD COLUMN icon TEXT DEFAULT '⭐'")
     except Exception:
         pass
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN log_type TEXT DEFAULT 'boolean'")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE habit_logs ADD COLUMN value REAL DEFAULT 1")
+    except Exception:
+        pass    
 
     conn.commit()
     conn.close()

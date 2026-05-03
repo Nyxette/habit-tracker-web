@@ -5,6 +5,8 @@
 
 {% set colors = ['#7C5CFF', '#FF6B9D', '#FFB703', '#34D399', '#F87171', '#38BDF8', '#A78BFA', '#FB923C'] %}
 
+
+
 <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:0.25rem;">
     <div>
         <div class="ht-heading">Good morning 👋</div>
@@ -26,14 +28,17 @@
 <div style="display:grid; gap:0.75rem;">
 {% for habit in habits %}
 {% set color = colors[loop.index0 % colors|length] %}
-{% set today_count = today_counts[habit[0]] %}
 {% set htype = habit[3] if habit|length > 3 else 'good' %}
 {% set hicon = habit[4] if habit|length > 4 else '⭐' %}
+{% set tv = today_values[habit[0]] %}
+{% set ltype = habit[5] if habit|length > 5 else 'boolean' %}
+
+
 
 <div class="ht-card" style="
     border-left: 3px solid {{ color }};
     transition: all 0.2s ease;
-    {% if today_count > 0 %}border-color: {{ color }};{% endif %}
+    {% if tv.count > 0 %}border-color: {{ color }};{% endif %}
 ">
     <div style="display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem;">
 
@@ -49,7 +54,7 @@
             position: relative;
         ">
             {{ hicon }}
-            {% if today_count > 0 %}
+            {% if tv.count > 0 %}
             <div style="
                 position:absolute; top:-5px; right:-5px;
                 width:16px; height:16px;
@@ -79,9 +84,11 @@
                 {% else %}
                 <span class="stat-pill bad" style="font-size:0.68rem;">⚡ Break this</span>
                 {% endif %}
-                {% if today_count > 0 %}
+                {% if tv.count > 0 %}
                 <span style="font-size:0.72rem; color:var(--text-muted);">
-                    Logged <strong style="color:var(--success);">{{ today_count }}×</strong> today
+                    {% if ltype == 'boolean' %}Logged <strong style="color:var(--success);">{{ tv.count }}×</strong> today
+                    {% elif ltype == 'duration' %}{{ tv.sum|int }} min today
+                    {% else %}{{ tv.sum|int }} total today{% endif %}
                 </span>
                 {% else %}
                 <span style="font-size:0.72rem; color:var(--text-muted);">Not logged today</span>
@@ -90,13 +97,22 @@
         </div>
 
         <!-- Log button -->
-        <form action="/log/{{ habit[0] }}" method="POST" class="d-inline">
-            <button type="submit" class="btn btn-log" style="font-family:'Sora',sans-serif; font-size:0.78rem; font-weight:600;">
-                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Log
-            </button>
+       
+        <form action="/log/{{ habit[0] }}" method="POST" class="d-inline" 
+            style="display:flex; align-items:center; gap:0.5rem;">
+            {% if ltype == 'boolean' %}
+                <input type="hidden" name="value" value="1">
+                <button type="submit" class="btn btn-log">
+                    ✓ Log
+                </button>
+            {% else %}
+                <input type="number" name="value" min="0" step="{% if ltype == 'duration' %}1{% else %}1{% endif %}"
+                    placeholder="{% if ltype == 'duration' %}mins{% else %}count{% endif %}"
+                    class="form-control" style="width:80px; height:36px; font-size:0.85rem; text-align:center;" required>
+                <button type="submit" class="btn btn-log">
+                    {% if ltype == 'duration' %}⏱ Log{% else %}🔢 Log{% endif %}
+                </button>
+            {% endif %}
         </form>
     </div>
 </div>

@@ -49,13 +49,22 @@
 <!-- Stat Cards Row -->
 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:0.75rem; margin-bottom:2rem;">
 
+    {% if log_type == 'duration' %}
+        {% set unit = 'min' %}
+    {% elif log_type == 'count' %}
+        {% set unit = 'times' %}
+    {% else %}
+        {% set unit = 'logs' %}
+    {% endif %}
+
+
     {% set stats_data = [
         ('🔥', 'Current Streak', cur_streak ~ ' days', '#FF6B9D', 'rgba(255,107,157,0.12)'),
         ('🏆', 'Longest Streak', longest_streak ~ ' days', '#FFB703', 'rgba(255,183,3,0.12)'),
-        ('📅', 'All Time', all_time_count ~ ' logs', '#7C5CFF', 'rgba(124,92,255,0.12)'),
-        ('📆', 'Last 30 Days', monthly_count ~ ' logs', '#34D399', 'rgba(52,211,153,0.12)'),
-        ('📊', 'Last 7 Days', weekly_count ~ ' logs', '#38BDF8', 'rgba(56,189,248,0.12)'),
-        ('🕐', 'Today', daily_count ~ ' logs', '#FB923C', 'rgba(251,146,60,0.12)'),
+        ('📅', 'All Time', all_time_count ~ ' ' ~ unit, '#7C5CFF', 'rgba(124,92,255,0.12)'),
+        ('📆', 'Last 30 Days', monthly_count ~ ' ' ~ unit, '#34D399', 'rgba(52,211,153,0.12)'),
+        ('📊', 'Last 7 Days', weekly_count ~ ' ' ~ unit, '#38BDF8', 'rgba(56,189,248,0.12)'),
+        ('🕐', 'Today', daily_count ~ ' ' ~ unit, '#FB923C', 'rgba(251,146,60,0.12)'),
     ] %}
 
     {% for icon, label, val, color, bg in stats_data %}
@@ -129,7 +138,9 @@ Chart.defaults.color = '#9590B8';
 Chart.defaults.font.family = "'DM Sans', sans-serif";
 
 // ── Bar Chart ──
+const unit = "{{ log_type }}" === 'duration' ? 'min' : ("{{ log_type }}" === 'count' ? 'times' : 'logs');
 new Chart(document.getElementById("barChart"), {
+    
     type: "bar",
     data: {
         labels: labels,
@@ -159,7 +170,7 @@ new Chart(document.getElementById("barChart"), {
                 borderWidth: 1,
                 padding: 10,
                 callbacks: {
-                    label: ctx => ` ${ctx.raw} log${ctx.raw !== 1 ? 's' : ''}`
+                    label: ctx => ` ${ctx.raw} ${unit}`
                 }
             }
         },

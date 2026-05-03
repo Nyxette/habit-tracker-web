@@ -45,6 +45,23 @@
             <input type="hidden" name="habit_icon" id="add-habit-icon" value="{{ all_icons[0] }}">
         </div>
 
+            <div style="min-width:200px;">
+                <label style="font-size:0.78rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Tracking</label>
+                <div style="display:flex; flex-direction:column; gap:0.3rem;">
+                    <label class="log-type-option">
+                        <input type="radio" name="log_type" value="boolean" checked> 
+                        <span>✅ Did it / Didn't</span>
+                    </label>
+                    <label class="log-type-option">
+                        <input type="radio" name="log_type" value="count">
+                        <span>🔢 Count (reps, pages…)</span>
+                    </label>
+                    <label class="log-type-option">
+                        <input type="radio" name="log_type" value="duration">
+                        <span>⏱️ Duration (minutes)</span>
+                    </label>
+                </div>
+            </div>
 
         <!-- Name + Type row -->
         <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
@@ -66,6 +83,7 @@
                 </svg>
                 Add Habit
             </button>
+
         </div>
     </form>
 </div>
@@ -170,6 +188,7 @@
                 <input type="hidden" name="habit_icon" id="edit-habit-icon-{{ habit[0] }}" value="{{ hicon }}">
             </div>
 
+            
             <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
                 <div style="flex:1; min-width:180px;">
                     <label style="font-size:0.75rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Name</label>
@@ -190,6 +209,29 @@
                     <button type="button" class="btn btn-ghost" onclick="toggleEditPanel({{ habit[0] }})" style="height:40px;">Cancel</button>
                 </div>
             </div>
+
+            
+            <div style="min-width:200px;">
+                <label style="font-size:0.75rem; font-weight:600; font-family:'Sora',sans-serif; color:var(--text-secondary); letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:0.5rem;">Tracking</label>
+                <div style="display:flex; flex-direction:column; gap:0.3rem;">
+                    <label class="log-type-option">
+                        <input type="radio" name="log_type" value="boolean"
+                            onchange="warnLogTypeChange(this, {{ habit[0] }}, '{{ habit[5] if habit|length > 5 else 'boolean' }}')"
+                            {% if habit[5] == 'boolean' or habit|length <= 5 %}checked{% endif %}>
+                        <span>✅ Did it / Didn't</span>
+                    </label>
+                    <label class="log-type-option">
+                        <input type="radio" name="log_type" value="count"
+                            onchange="warnLogTypeChange(this, {{ habit[0] }}, '{{ habit[5] if habit|length > 5 else 'boolean' }}')">
+                        <span>🔢 Count (reps, pages…)</span>
+                    </label>
+                    <label class="log-type-option">
+                        <input type="radio" name="log_type" value="duration">
+                        <span>⏱️ Duration (minutes)</span>
+                    </label>
+                </div>
+            </div>
+
         </form>
     </div>
 </div>
@@ -251,5 +293,21 @@ function toggleEditPanel(id) {
         panel.classList.remove('animate-in');
     }
 }
+
+function warnLogTypeChange(el, habitId, originalType) {
+    if (el.value === 'boolean' && originalType !== 'boolean') {
+        const ok = confirm(
+            'Switching to "Did it / Didn\'t" will reset all existing log values for this habit to 1.\n\nYour log history (dates) will be kept, but the amounts will be lost. Continue?'
+        );
+        if (!ok) {
+            // Revert the radio to the original type
+            const panel = document.getElementById('edit-panel-' + habitId);
+            const original = panel.querySelector(`input[value="${originalType}"]`);
+            if (original) original.checked = true;
+        }
+    }
+}
+
+
 </script>
 {% endblock %}
